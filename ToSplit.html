@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>一列数据转一行</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    textarea, input[type="text"] {
+      width: 100%; box-sizing: border-box;
+      padding: 0.75rem; border: 1px solid #ccc; border-radius: 8px;
+      font-size: 0.95rem; line-height: 1.4;
+    }
+    .btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button {
+      padding: 0.6rem 0.9rem; border: none; border-radius: 8px;
+      background: #0a7cff; color: #fff; cursor: pointer; font-size: 0.95rem;
+    }
+    button.secondary { background: #555; }
+    .small { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
+    .out-wrap { display: flex; gap: 0.5rem; align-items: center; }
+    .note { margin-top: 0.75rem; color: #888; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>将一列数据转成一行</h1>
+
+  <div class="grid">
+    <!-- 输入区 -->
+    <div>
+      <label for="input">在此粘贴一列数据（每行一个值）：</label>
+      <textarea id="input" rows="14" placeholder="例如：
+a
+b
+c
+"></textarea>
+      <div class="small">空行会自动忽略；每行的前后空格会自动移除。</div>
+      <div class="btns" style="margin-top: 0.75rem;">
+        <button id="btnComma">用逗号 , 分隔</button>
+        <button id="btnQuotedComma">用 ',' 分隔（每项加单引号）</button>
+        <button id="btnClear" class="secondary" title="清空输入">清空</button>
+      </div>
+    </div>
+
+    <!-- 输出区 -->
+    <div>
+      <label for="output">结果（一行）：</label>
+      <div class="out-wrap">
+        <input id="output" type="text" readonly placeholder="结果会显示在这里" />
+        <button id="btnCopy" class="secondary">复制</button>
+      </div>
+      <div class="note">提示：结果已是一行文本，适合直接粘贴到 SQL、CSV、日志或命令行参数中。</div>
+    </div>
+  </div>
+
+  <script>
+    function getCleanItems() {
+      const raw = document.getElementById('input').value || '';
+      return raw
+        .split(/\r?\n/)               // 按行分割
+        .map(s => s.trim())           // 去掉前后空格
+        .filter(s => s.length > 0);   // 过滤空行
+    }
+
+    function setOutput(text) {
+      const out = document.getElementById('output');
+      out.value = text;
+    }
+
+    document.getElementById('btnComma').addEventListener('click', () => {
+      const items = getCleanItems();
+      setOutput(items.join(','));
+    });
+
+    document.getElementById('btnQuotedComma').addEventListener('click', () => {
+      const items = getCleanItems().map(s => `'${s.replace(/'/g, "\\'")}'`);
+      setOutput(items.join(','));
+    });
+
+    document.getElementById('btnCopy').addEventListener('click', async () => {
+      const text = document.getElementById('output').value;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        const btn = document.getElementById('btnCopy');
+        const prev = btn.textContent;
+        btn.textContent = '已复制';
+        setTimeout(() => (btn.textContent = prev), 1200);
+      } catch (e) {
+        alert('复制失败，请手动选中结果文本后 Ctrl/Cmd+C 复制。');
+      }
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+      document.getElementById('input').value = '';
+      setOutput('');
+    });
+  </script>
+</body>
+</html>
